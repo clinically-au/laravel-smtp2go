@@ -1,6 +1,6 @@
 The MIT License (MIT)
 
-Copyright (c) :vendor_name <author@domain.com>
+Copyright (c) CCMx Pty Limited t/a Clinically <wojt@clinically.com.au>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

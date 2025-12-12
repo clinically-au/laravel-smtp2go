@@ -1,37 +1,27 @@
 <?php
 
-namespace VendorName\Skeleton\Tests;
+namespace Clinically\Smtp2GoTransport\Tests;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
+use Clinically\Smtp2GoTransport\Smtp2GoTransportServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
-use VendorName\Skeleton\SkeletonServiceProvider;
 
 class TestCase extends Orchestra
 {
     protected function setUp(): void
     {
         parent::setUp();
-
-        Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'VendorName\\Skeleton\\Database\\Factories\\'.class_basename($modelName).'Factory'
-        );
     }
 
     protected function getPackageProviders($app)
     {
         return [
-            SkeletonServiceProvider::class,
+            Smtp2GoTransportServiceProvider::class,
         ];
     }
 
     public function getEnvironmentSetUp($app)
     {
-        config()->set('database.default', 'testing');
-
-        /*
-         foreach (\Illuminate\Support\Facades\File::allFiles(__DIR__ . '/../database/migrations') as $migration) {
-            (include $migration->getRealPath())->up();
-         }
-         */
+        config()->set('smtp2go.endpoint', 'https://api.smtp2go.com/v3');
+        config()->set('smtp2go.api_key', 'test-api-key');
     }
 }

@@ -1,23 +1,26 @@
 {
-    "name": ":vendor_slug/:package_slug",
-    "description": ":package_description",
+    "name": "clinically-au/laravel-smtp2go",
+    "description": "Laravel Mail transport driver for SMTP2Go API",
     "keywords": [
-        ":vendor_name",
         "laravel",
-        ":package_slug"
+        "smtp2go",
+        "mail",
+        "email",
+        "transport",
+        "mailer"
     ],
-    "homepage": "https://github.com/:vendor_slug/:package_slug",
+    "homepage": "https://github.com/clinically-au/laravel-smtp2go",
     "license": "MIT",
     "authors": [
         {
-            "name": ":author_name",
-            "email": "author@domain.com",
+            "name": "Wojt Janowski",
+            "email": "wojt@clinically.com.au",
             "role": "Developer"
         }
     ],
     "require": {
         "php": "^8.4",
-        "spatie/laravel-package-tools": "^1.16",
+        "guzzlehttp/guzzle": "^7.0",
         "illuminate/contracts": "^11.0||^12.0"
     },
     "require-dev": {
@@ -30,18 +33,16 @@
         "pestphp/pest-plugin-laravel": "^4.0",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan-deprecation-rules": "^2.0",
-        "phpstan/phpstan-phpunit": "^2.0",
-        "spatie/laravel-ray": "^1.35"
+        "phpstan/phpstan-phpunit": "^2.0"
     },
     "autoload": {
         "psr-4": {
-            "VendorName\\Skeleton\\": "src/",
-            "VendorName\\Skeleton\\Database\\Factories\\": "database/factories/"
+            "Clinically\\Smtp2GoTransport\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "VendorName\\Skeleton\\Tests\\": "tests/",
+            "Clinically\\Smtp2GoTransport\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
@@ -63,11 +64,8 @@
     "extra": {
         "laravel": {
             "providers": [
-                "VendorName\\Skeleton\\SkeletonServiceProvider"
-            ],
-            "aliases": {
-                "Skeleton": "VendorName\\Skeleton\\Facades\\Skeleton"
-            }
+                "Clinically\\Smtp2GoTransport\\Smtp2GoTransportServiceProvider"
+            ]
         }
     },
     "minimum-stability": "dev",
