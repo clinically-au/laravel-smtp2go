@@ -2,14 +2,33 @@
 
 All notable changes to `laravel-smtp2go` will be documented in this file.
 
-## v1.0.1 - 2025-12-12
+## v1.0.1 - Bug Fixes - 2025-12-12
 
 ### Fixed
+
 - Fixed Guzzle base_uri handling to properly include `/v3` in API endpoint URL
 - Fixed test application PHP heredoc timestamp interpolation
 - Fixed GitHub Actions test matrix to exclude incompatible Laravel 12 + prefer-lowest combination
 
 ### Added
+
+- Added plain `LICENSE` file (without extension) for better Packagist detection
+
+
+---
+
+**Full Changelog**: https://github.com/clinically-au/laravel-smtp2go/compare/v1.0.0...v1.0.1
+
+## v1.0.1 - 2025-12-12
+
+### Fixed
+
+- Fixed Guzzle base_uri handling to properly include `/v3` in API endpoint URL
+- Fixed test application PHP heredoc timestamp interpolation
+- Fixed GitHub Actions test matrix to exclude incompatible Laravel 12 + prefer-lowest combination
+
+### Added
+
 - Added plain `LICENSE` file (without extension) for better Packagist detection
 
 ## v1.0.0 - Initial Release - 2025-12-12
@@ -51,6 +70,7 @@ All notable changes to `laravel-smtp2go` will be documented in this file.
 
 ```bash
 composer require clinically-au/laravel-smtp2go
+
 
 ```
 See the [README](https://github.com/clinically-au/laravel-smtp2go#readme) for complete installation and usage instructions.
