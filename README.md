@@ -1,6 +1,6 @@
 # SMTP2Go Laravel Mail Transport
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/clinically-au/laravel-smtp2go/tests.yml?label=tests)](https://github.com/clinically-au/laravel-smtp2go/actions)
+[![Tests](https://img.shields.io/github/actions/workflow/status/clinically-au/laravel-smtp2go/run-tests.yml?label=tests)](https://github.com/clinically-au/laravel-smtp2go/actions)
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/clinically-au/laravel-smtp2go.svg)](https://packagist.org/packages/clinically-au/laravel-smtp2go)
 [![Total Downloads](https://img.shields.io/packagist/dt/clinically-au/laravel-smtp2go.svg)](https://packagist.org/packages/clinically-au/laravel-smtp2go)
 [![License](https://img.shields.io/packagist/l/clinically-au/laravel-smtp2go.svg)](https://packagist.org/packages/clinically-au/laravel-smtp2go)
@@ -172,11 +172,28 @@ class WelcomeEmail extends Mailable
 
 ## Testing
 
+### Package Test Suite
+
 The package includes a comprehensive test suite:
 
 ```bash
 composer test
 ```
+
+### Testing with Real SMTP2Go API
+
+To verify the package works with your SMTP2Go account, use the included test script:
+
+```bash
+# 1. Configure your API credentials
+cp test-app/.env.example test-app/.env
+# Edit test-app/.env and add your SMTP2GO_API_KEY
+
+# 2. Run the test
+php test-app/send-test-email.php
+```
+
+See [test-app/README.md](test-app/README.md) for detailed instructions.
 
 ### Testing in Your Application
 

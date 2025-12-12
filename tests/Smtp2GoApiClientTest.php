@@ -25,7 +25,7 @@ beforeEach(function () {
 
     $this->client->client = new Client([
         'handler' => $handlerStack,
-        'base_uri' => 'https://api.smtp2go.com/v3',
+        'base_uri' => 'https://api.smtp2go.com/v3/',
         'headers' => [
             'X-Smtp2go-Api-Key' => 'test-key',
             'Accept' => 'application/json',
@@ -205,7 +205,7 @@ it('sends request to correct endpoint', function () {
 
     $request = $this->requestHistory[0]['request'];
 
-    expect((string) $request->getUri())->toContain('/email/send');
+    expect((string) $request->getUri())->toBe('https://api.smtp2go.com/v3/email/send');
     expect($request->getMethod())->toBe('POST');
 });
 

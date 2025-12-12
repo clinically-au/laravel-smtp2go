@@ -27,7 +27,7 @@ class Smtp2GoApiClient
 
         $this->client = new Client(
             [
-                'base_uri' => $this->endpoint,
+                'base_uri' => rtrim($this->endpoint, '/').'/',
                 'headers' => [
                     'X-Smtp2go-Api-Key' => $this->apiKey,
                     'Accept' => 'application/json',
@@ -79,7 +79,7 @@ class Smtp2GoApiClient
             $payload['attachments'] = $attachments;
         }
 
-        $this->client->post('/email/send', [
+        $this->client->post('email/send', [
             'json' => $payload,
         ]);
     }
