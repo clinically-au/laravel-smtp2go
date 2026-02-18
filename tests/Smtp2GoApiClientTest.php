@@ -9,10 +9,24 @@ use GuzzleHttp\Psr7\Response;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Part\DataPart;
 
+function smtp2goApiResponse(array $overrides = []): string
+{
+    return json_encode(array_merge([
+        'request_id' => 'aa253463-0c0e-fake-a]e8-ce0ac3c3e553',
+        'data' => [
+            'succeeded' => 1,
+            'failed' => 0,
+            'failures' => [],
+            'email_id' => 'em_12345abcde',
+            'request_id' => 'aa253463-0c0e-fake-a]e8-ce0ac3c3e553',
+        ],
+    ], $overrides));
+}
+
 beforeEach(function () {
     $this->requestHistory = [];
     $this->mock = new MockHandler([
-        new Response(200, [], json_encode(['success' => true])),
+        new Response(200, [], smtp2goApiResponse()),
     ]);
 
     $handlerStack = HandlerStack::create($this->mock);
@@ -225,4 +239,87 @@ it('includes api key in headers', function () {
 
     expect($request->getHeader('X-Smtp2go-Api-Key'))->toBe(['test-key']);
     expect($request->getHeader('Accept'))->toBe(['application/json']);
+});
+
+it('returns email_id and request_id from API response', function () {
+    $result = $this->client->send([
+        'sender' => [new Address('sender@example.com', 'Sender')],
+        'to' => [new Address('recipient@example.com', 'Recipient')],
+        'cc' => [],
+        'bcc' => [],
+        'subject' => 'Test',
+        'htmlBody' => 'Body',
+        'textBody' => null,
+        'attachments' => [],
+    ]);
+
+    expect($result)->toBeArray()
+        ->and($result['email_id'])->toBe('em_12345abcde')
+        ->and($result['request_id'])->toBe('aa253463-0c0e-fake-a]e8-ce0ac3c3e553');
+});
+
+it('includes custom_headers in payload when provided', function () {
+    $this->client->send([
+        'sender' => [new Address('sender@example.com', 'Sender')],
+        'to' => [new Address('recipient@example.com', 'Recipient')],
+        'cc' => [],
+        'bcc' => [],
+        'subject' => 'Test',
+        'htmlBody' => 'Body',
+        'textBody' => null,
+        'attachments' => [],
+        'custom_headers' => [
+            ['header' => 'X-Communication-Id', 'value' => '42'],
+            ['header' => 'X-Tenant-Id', 'value' => 'test-tenant'],
+        ],
+    ]);
+
+    $request = $this->requestHistory[0]['request'];
+    $body = json_decode($request->getBody()->getContents(), true);
+
+    expect($body['custom_headers'])->toBe([
+        ['header' => 'X-Communication-Id', 'value' => '42'],
+        ['header' => 'X-Tenant-Id', 'value' => 'test-tenant'],
+    ]);
+});
+
+it('omits custom_headers when empty', function () {
+    $this->client->send([
+        'sender' => [new Address('sender@example.com', 'Sender')],
+        'to' => [new Address('recipient@example.com', 'Recipient')],
+        'cc' => [],
+        'bcc' => [],
+        'subject' => 'Test',
+        'htmlBody' => 'Body',
+        'textBody' => null,
+        'attachments' => [],
+        'custom_headers' => [],
+    ]);
+
+    $request = $this->requestHistory[0]['request'];
+    $body = json_decode($request->getBody()->getContents(), true);
+
+    expect($body)->not->toHaveKey('custom_headers');
+});
+
+it('returns empty strings when API response lacks expected fields', function () {
+    // Replace the mock to return a minimal response
+    $this->mock->reset();
+    $this->mock->append(
+        new Response(200, [], json_encode(['request_id' => 'req-123', 'data' => []])),
+    );
+
+    $result = $this->client->send([
+        'sender' => [new Address('sender@example.com', 'Sender')],
+        'to' => [new Address('recipient@example.com', 'Recipient')],
+        'cc' => [],
+        'bcc' => [],
+        'subject' => 'Test',
+        'htmlBody' => 'Body',
+        'textBody' => null,
+        'attachments' => [],
+    ]);
+
+    expect($result['email_id'])->toBe('')
+        ->and($result['request_id'])->toBe('req-123');
 });

@@ -45,7 +45,16 @@ class Smtp2GoApiClient
         ];
     }
 
-    public function send(array $data): void
+    /**
+     * Send an email via the SMTP2GO API.
+     *
+     * Returns the API response data including `email_id` and `request_id`
+     * which can be used for delivery tracking via webhooks.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{request_id: string, email_id: string}
+     */
+    public function send(array $data): array
     {
         $sender = $this->getNameWithAddress($data['sender'][0]);
         $to = collect($data['to'])->map(fn ($addr) => $this->getNameWithAddress($addr))->all();
@@ -75,13 +84,25 @@ class Smtp2GoApiClient
             $payload['text_body'] = $data['textBody'];
         }
 
+        if (! empty($data['custom_headers'])) {
+            $payload['custom_headers'] = $data['custom_headers'];
+        }
+
         if (! empty($attachments)) {
             $payload['attachments'] = $attachments;
         }
 
-        $this->client->post('email/send', [
+        $response = $this->client->post('email/send', [
             'json' => $payload,
         ]);
+
+        $body = json_decode($response->getBody()->getContents(), true);
+        $responseData = $body['data'] ?? [];
+
+        return [
+            'request_id' => $responseData['request_id'] ?? $body['request_id'] ?? '',
+            'email_id' => $responseData['email_id'] ?? '',
+        ];
     }
 
     private function getNameWithAddress(Address $address): string
