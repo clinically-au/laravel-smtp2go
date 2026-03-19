@@ -2,6 +2,22 @@
 
 All notable changes to `laravel-smtp2go` will be documented in this file.
 
+## v1.2.0 - Laravel 13 Support - 2026-03-19
+
+### Added
+
+- Added Laravel 13 support by widening `illuminate/contracts` constraint to `^13.0`
+- Widened `orchestra/testbench` constraint to `^11.0` for Laravel 13 testing
+
+### Compatibility
+
+- PHP 8.4+
+- Laravel 11.x, 12.x, and 13.x
+
+---
+
+**Full Changelog**: https://github.com/clinically-au/laravel-smtp2go/compare/v1.1.0...v1.2.0
+
 ## v1.0.1 - Bug Fixes - 2025-12-12
 
 ### Fixed
