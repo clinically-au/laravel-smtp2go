@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-smtp2go` will be documented in this file.
 
+## v1.2.1 - 2026-07-30
+
+### What's Changed
+
+* Bump ramsey/composer-install from 3 to 4 by @dependabot[bot] in https://github.com/clinically-au/laravel-smtp2go/pull/3
+
+**Full Changelog**: https://github.com/clinically-au/laravel-smtp2go/compare/v1.2.0...v1.2.1
+
 ## v1.2.0 - Laravel 13 Support - 2026-03-19
 
 ### Added
@@ -13,6 +21,7 @@ All notable changes to `laravel-smtp2go` will be documented in this file.
 
 - PHP 8.4+
 - Laravel 11.x, 12.x, and 13.x
+
 
 ---
 
@@ -86,6 +95,7 @@ All notable changes to `laravel-smtp2go` will be documented in this file.
 
 ```bash
 composer require clinically-au/laravel-smtp2go
+
 
 
 ```
