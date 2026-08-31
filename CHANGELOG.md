@@ -2,6 +2,29 @@
 
 All notable changes to `laravel-smtp2go` will be documented in this file.
 
+## v1.2.2 - 2026-08-31
+
+### Fixed
+
+- Refused sends no longer fail silently. The SMTP2Go API returns `HTTP 200` with
+  `data.succeeded: 0`, `data.failed: 1` and a reason in `data.failures` when it declines a
+  message (unverified sender domain, suspended account, exceeded quota). The client only read
+  `data.request_id` and `data.email_id`, so Laravel reported a successful send, the
+  `X-Smtp2go-Email-Id` header was never added, and delivery-tracking listeners silently no-opped
+  while every email was discarded.
+- `Smtp2GoApiClient::send()` now throws `Symfony\Component\Mailer\Exception\TransportException`
+  unless SMTP2Go accepted the message, with the joined `data.failures` strings and the
+  `request_id` in the exception message (never the API key). A partial send (some recipients
+  accepted, some refused) is also raised — Symfony's transport contract is all-or-nothing, so
+  reporting success would discard the refused recipients silently.
+- `Smtp2GoTransport::doSend()` no longer skips the `X-Smtp2go-Email-Id` header when `email_id` is
+  empty; that state can no longer be reached, so the two disagreeing half-guards are now one.
+
+### Note
+
+This is a behaviour change for callers: sends that previously appeared to succeed while being
+discarded now throw, so queued mail and notifications will fail and retry as intended.
+
 ## v1.2.1 - 2026-07-30
 
 ### What's Changed
