@@ -229,6 +229,30 @@ This package implements Laravel's custom mail transport interface by:
 
 All error handling, retries, and queue integration are handled by Laravel's mail system automatically.
 
+## Error Handling
+
+The SMTP2Go API answers `HTTP 200` even when it refuses to send a message — the outcome is
+reported in the response body:
+
+```json
+{"request_id":"7fb0e8c8-...","data":{"succeeded":0,"failed":1,
+ "failures":["An error occurred during the SMTP request: From header sender domain not verified (example.com) ..."],
+ "email_id":""}}
+```
+
+The transport treats anything short of a fully accepted message as a send failure and throws
+`Symfony\Component\Mailer\Exception\TransportException`, with the reported failures and the
+`request_id` in the message. That means:
+
+- `Mail::send()` throws, rather than reporting a success that never happened.
+- Queued mail and notifications fail and retry through the normal queue machinery
+  (`NotificationFailed` fires as expected).
+- A partial send — some recipients accepted, some refused — is also raised. Symfony's transport
+  contract is all-or-nothing, so the alternative would be to silently discard the refused
+  recipients. Recipient-level detail is in the exception message.
+
+Common causes are an unverified sender domain, a suspended account, and an exceeded sending quota.
+
 ## API Documentation
 
 For detailed SMTP2Go API documentation, see:

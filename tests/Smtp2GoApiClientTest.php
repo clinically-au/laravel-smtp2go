@@ -6,6 +6,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
+use Symfony\Component\Mailer\Exception\TransportException;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Part\DataPart;
 
@@ -21,6 +22,23 @@ function smtp2goApiResponse(array $overrides = []): string
             'request_id' => 'aa253463-0c0e-fake-a]e8-ce0ac3c3e553',
         ],
     ], $overrides));
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function sampleMessage(): array
+{
+    return [
+        'sender' => [new Address('sender@example.com', 'Sender')],
+        'to' => [new Address('recipient@example.com', 'Recipient')],
+        'cc' => [],
+        'bcc' => [],
+        'subject' => 'Test',
+        'htmlBody' => 'Body',
+        'textBody' => null,
+        'attachments' => [],
+    ];
 }
 
 beforeEach(function () {
@@ -302,24 +320,83 @@ it('omits custom_headers when empty', function () {
     expect($body)->not->toHaveKey('custom_headers');
 });
 
-it('returns empty strings when API response lacks expected fields', function () {
-    // Replace the mock to return a minimal response
+it('throws when the API refuses the send with HTTP 200', function () {
+    // Verbatim shape returned by SMTP2GO for an unverified sender domain.
+    $this->mock->reset();
+    $this->mock->append(
+        new Response(200, [], json_encode([
+            'request_id' => '7fb0e8c8-3820-4a77-b952-a060d6aa1ec4',
+            'data' => [
+                'succeeded' => 0,
+                'failed' => 1,
+                'failures' => [
+                    'An error occurred during the SMTP request: From header sender domain not verified (staging.clinically.dev)',
+                ],
+                'email_id' => '',
+            ],
+        ])),
+    );
+
+    expect(fn () => $this->client->send(sampleMessage()))
+        ->toThrow(
+            TransportException::class,
+            'SMTP2GO did not accept the message for delivery (succeeded: 0, failed: 1): '
+            .'An error occurred during the SMTP request: From header sender domain not verified (staging.clinically.dev) '
+            .'[request_id: 7fb0e8c8-3820-4a77-b952-a060d6aa1ec4]',
+        );
+});
+
+it('throws when only some recipients are accepted', function () {
+    $this->mock->reset();
+    $this->mock->append(
+        new Response(200, [], json_encode([
+            'request_id' => 'req-partial',
+            'data' => [
+                'succeeded' => 1,
+                'failed' => 1,
+                'failures' => ['Recipient rejected: bad@example.com'],
+                'email_id' => 'em_partial',
+            ],
+        ])),
+    );
+
+    expect(fn () => $this->client->send(sampleMessage()))
+        ->toThrow(
+            TransportException::class,
+            'SMTP2GO did not accept the message for delivery (succeeded: 1, failed: 1): '
+            .'Recipient rejected: bad@example.com [request_id: req-partial]',
+        );
+});
+
+it('throws when the API response lacks the expected fields', function () {
     $this->mock->reset();
     $this->mock->append(
         new Response(200, [], json_encode(['request_id' => 'req-123', 'data' => []])),
     );
 
-    $result = $this->client->send([
-        'sender' => [new Address('sender@example.com', 'Sender')],
-        'to' => [new Address('recipient@example.com', 'Recipient')],
-        'cc' => [],
-        'bcc' => [],
-        'subject' => 'Test',
-        'htmlBody' => 'Body',
-        'textBody' => null,
-        'attachments' => [],
-    ]);
+    expect(fn () => $this->client->send(sampleMessage()))
+        ->toThrow(
+            TransportException::class,
+            'SMTP2GO did not accept the message for delivery (succeeded: 0, failed: 0): '
+            .'no failure reason reported by the API [request_id: req-123]',
+        );
+});
 
-    expect($result['email_id'])->toBe('')
-        ->and($result['request_id'])->toBe('req-123');
+it('does not leak the api key in the failure message', function () {
+    $this->mock->reset();
+    $this->mock->append(
+        new Response(200, [], smtp2goApiResponse([
+            'data' => ['succeeded' => 0, 'failed' => 1, 'failures' => ['nope'], 'email_id' => ''],
+        ])),
+    );
+
+    try {
+        $this->client->send(sampleMessage());
+    } catch (TransportException $e) {
+        expect($e->getMessage())->not->toContain('test-key');
+
+        return;
+    }
+
+    $this->fail('Expected a TransportException.');
 });

@@ -58,13 +58,13 @@ class Smtp2GoTransport extends AbstractTransport
         ]);
 
         // Store the email_id in a response header so downstream listeners
-        // (e.g. MessageSent event) can access it for delivery tracking.
-        if (! empty($this->lastResponse['email_id'])) {
-            $originalMessage->getHeaders()->addTextHeader(
-                'X-Smtp2go-Email-Id',
-                $this->lastResponse['email_id'],
-            );
-        }
+        // (e.g. MessageSent event) can access it for delivery tracking. The client
+        // throws a TransportException unless SMTP2GO accepted the message and
+        // returned an email_id, so there is no empty-id case to guard here.
+        $originalMessage->getHeaders()->addTextHeader(
+            'X-Smtp2go-Email-Id',
+            $this->lastResponse['email_id'],
+        );
     }
 
     /**
