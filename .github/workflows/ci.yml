@@ -1,0 +1,16 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    permissions:
+      contents: read
+    uses: clinically-au/.github/.github/workflows/quality.yml@main
+    secrets: inherit
+    with:
+      require: pint,phpstan,pest
+      min-tests: 20

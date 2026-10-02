@@ -9,6 +9,7 @@ use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mime\Message;
 use Symfony\Component\Mime\MessageConverter;
+use Throwable;
 
 class Smtp2GoTransport extends AbstractTransport
 {
@@ -61,10 +62,17 @@ class Smtp2GoTransport extends AbstractTransport
         // (e.g. MessageSent event) can access it for delivery tracking. The client
         // throws a TransportException unless SMTP2GO accepted the message and
         // returned an email_id, so there is no empty-id case to guard here.
-        $originalMessage->getHeaders()->addTextHeader(
-            'X-Smtp2go-Email-Id',
-            $this->lastResponse['email_id'],
-        );
+        try {
+            $this->addAcceptanceHeader($originalMessage, $this->lastResponse['email_id']);
+        } catch (Throwable) {
+            // SMTP2GO has accepted the message. Header bookkeeping must not make
+            // the mailer retry and submit a duplicate email.
+        }
+    }
+
+    protected function addAcceptanceHeader(Message $message, string $emailId): void
+    {
+        $message->getHeaders()->addTextHeader('X-Smtp2go-Email-Id', $emailId);
     }
 
     /**

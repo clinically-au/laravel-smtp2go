@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Clinically\Smtp2GoTransport\Client;
 
+use Clinically\Smtp2GoTransport\Exception\Smtp2GoRefusedMessage;
 use GuzzleHttp\Client;
 use InvalidArgumentException;
-use Symfony\Component\Mailer\Exception\TransportException;
 use Symfony\Component\Mime\Address;
 use Symfony\Component\Mime\Part\DataPart;
 
@@ -57,7 +57,7 @@ class Smtp2GoApiClient
      * @param  array<string, mixed>  $data
      * @return array{request_id: string, email_id: string}
      *
-     * @throws TransportException when SMTP2GO does not accept the message for delivery
+     * @throws Smtp2GoRefusedMessage when SMTP2GO does not accept every recipient for delivery
      */
     public function send(array $data): array
     {
@@ -131,7 +131,7 @@ class Smtp2GoApiClient
      *
      * @param  array<array-key, mixed>  $responseData
      *
-     * @throws TransportException
+     * @throws Smtp2GoRefusedMessage
      */
     private function guardAgainstRefusedSend(array $responseData, string $requestId, string $emailId): void
     {
@@ -143,18 +143,29 @@ class Smtp2GoApiClient
         }
 
         $rawFailures = $responseData['failures'] ?? [];
-        $failures = collect(is_array($rawFailures) ? $rawFailures : [$rawFailures])
-            ->map(fn ($failure) => $this->asString($failure))
+        $failureItems = is_array($rawFailures) ? $rawFailures : [$rawFailures];
+        $failures = collect($failureItems)
+            ->map(fn ($failure) => is_array($failure)
+                ? $this->asString($failure['message'] ?? $failure['reason'] ?? '')
+                : $this->asString($failure))
             ->filter()
             ->implode('; ');
+        $failureCodes = collect($failureItems)
+            ->map(fn ($failure) => is_array($failure)
+                ? $this->safeCode($failure['code'] ?? $failure['error_code'] ?? null)
+                : null)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
-        throw new TransportException(sprintf(
+        throw new Smtp2GoRefusedMessage(sprintf(
             'SMTP2GO did not accept the message for delivery (succeeded: %d, failed: %d): %s [request_id: %s]',
             $succeeded,
             $failed,
             $failures !== '' ? $failures : 'no failure reason reported by the API',
             $requestId !== '' ? $requestId : 'unknown',
-        ));
+        ), $succeeded, $failed, $failureCodes, $requestId, $emailId);
     }
 
     private function asString(mixed $value): string
@@ -165,6 +176,17 @@ class Smtp2GoApiClient
     private function asInt(mixed $value): int
     {
         return is_numeric($value) ? (int) $value : 0;
+    }
+
+    private function safeCode(mixed $value): ?string
+    {
+        if (! is_string($value) && ! is_int($value)) {
+            return null;
+        }
+
+        $code = (string) $value;
+
+        return preg_match('/\A[A-Za-z0-9_.-]{1,64}\z/', $code) === 1 ? $code : null;
     }
 
     private function getNameWithAddress(Address $address): string
