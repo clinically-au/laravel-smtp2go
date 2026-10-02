@@ -15,14 +15,14 @@ A Laravel Mail transport driver for sending emails via the [SMTP2Go](https://www
 - ✅ CC and BCC recipients
 - ✅ Queue integration for background processing
 - ✅ Automatic retries on failure
-- ✅ Laravel 11 & 12 compatible
-- ✅ PHP 8.4+ support
+- ✅ Laravel 13 compatible
+- ✅ PHP 8.5+ support
 - ✅ Comprehensive test coverage
 
 ## Requirements
 
-- PHP 8.4+
-- Laravel 11.0+ or 12.0+
+- PHP 8.5+
+- Laravel 13.0+
 - SMTP2Go API key ([Get one here](https://www.smtp2go.com/pricing/))
 
 ## Installation
