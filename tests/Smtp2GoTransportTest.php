@@ -8,6 +8,7 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
 use Symfony\Component\Mailer\Exception\TransportException;
 use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Message;
 
 function transportWithResponse(string $body): Smtp2GoTransport
 {
@@ -42,6 +43,30 @@ it('adds the email id header when the message is accepted', function () {
     expect($sent?->getOriginalMessage()->getHeaders()->get('X-Smtp2go-Email-Id')?->getBodyAsString())
         ->toBe('em_12345abcde')
         ->and($transport->getLastResponse()['email_id'])->toBe('em_12345abcde');
+});
+
+it('returns accepted evidence when post-acceptance header bookkeeping fails', function () {
+    $apiClient = new Smtp2GoApiClient([
+        'endpoint' => 'https://api.smtp2go.com/v3',
+        'api_key' => 'test-key',
+    ]);
+    $apiClient->client = new Client([
+        'handler' => HandlerStack::create(new MockHandler([new Response(200, [], smtp2goApiResponse())])),
+        'base_uri' => 'https://api.smtp2go.com/v3/',
+    ]);
+    $transport = new class($apiClient) extends Smtp2GoTransport
+    {
+        protected function addAcceptanceHeader(Message $message, string $emailId): void
+        {
+            throw new RuntimeException('header store unavailable');
+        }
+    };
+
+    expect($transport->send(sampleEmail()))->not->toBeNull()
+        ->and($transport->getLastResponse())->toBe([
+            'request_id' => 'aa253463-0c0e-fake-a]e8-ce0ac3c3e553',
+            'email_id' => 'em_12345abcde',
+        ]);
 });
 
 it('fails the send when SMTP2GO refuses the message', function () {

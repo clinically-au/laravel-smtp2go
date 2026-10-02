@@ -1,6 +1,7 @@
 <?php
 
 use Clinically\Smtp2GoTransport\Client\Smtp2GoApiClient;
+use Clinically\Smtp2GoTransport\Exception\Smtp2GoRefusedMessage;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -40,6 +41,37 @@ function sampleMessage(): array
         'attachments' => [],
     ];
 }
+
+it('exposes typed zero and partial acceptance evidence with safe codes', function (int $accepted, bool $hasAccepted) {
+    $this->mock->reset();
+    $this->mock->append(new Response(200, [], smtp2goApiResponse([
+        'data' => [
+            'succeeded' => $accepted,
+            'failed' => 1,
+            'failures' => [
+                ['code' => 'sender_unverified', 'message' => 'Sender rejected'],
+                ['code' => 'unsafe code with spaces', 'message' => 'Other rejection'],
+            ],
+            'email_id' => $accepted > 0 ? 'em_partial' : '',
+            'request_id' => 'req-refused',
+        ],
+    ])));
+
+    try {
+        $this->client->send(sampleMessage());
+        $this->fail('Expected refusal evidence.');
+    } catch (Smtp2GoRefusedMessage $exception) {
+        expect($exception)->toBeInstanceOf(TransportException::class)
+            ->and($exception->acceptedCount)->toBe($accepted)
+            ->and($exception->failedCount)->toBe(1)
+            ->and($exception->hasAcceptedRecipients())->toBe($hasAccepted)
+            ->and($exception->failureCodes)->toBe(['sender_unverified'])
+            ->and($exception->requestId)->toBe('req-refused');
+    }
+})->with([
+    'zero accepted' => [0, false],
+    'partially accepted' => [1, true],
+]);
 
 beforeEach(function () {
     $this->requestHistory = [];
