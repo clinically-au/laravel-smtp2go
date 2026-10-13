@@ -40,6 +40,11 @@ jobs:
         run: |
           # shellcheck disable=SC2016
           php -r '$xml = simplexml_load_file("build/junit.xml"); $count = (int) $xml->testsuite["tests"]; if ($count < 20) { fwrite(STDERR, "Only $count tests discovered\n"); exit(1); } echo "Ran $count tests\n";'
+      - name: Guzzle 7 compatibility
+        if: matrix.gate == 'tests'
+        run: |
+          composer update 'guzzlehttp/guzzle:^7.0' --with-all-dependencies --no-interaction --prefer-dist
+          composer test
 
   publish:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
