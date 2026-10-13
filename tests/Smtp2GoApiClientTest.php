@@ -3,6 +3,8 @@
 use Clinically\Smtp2GoTransport\Client\Smtp2GoApiClient;
 use Clinically\Smtp2GoTransport\Exception\Smtp2GoRefusedMessage;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
@@ -351,6 +353,16 @@ it('omits custom_headers when empty', function () {
 
     expect($body)->not->toHaveKey('custom_headers');
 });
+
+it('propagates HTTP failures instead of reporting an accepted message', function (int $status, string $exception) {
+    $this->mock->reset();
+    $this->mock->append(new Response($status, [], smtp2goApiResponse()));
+
+    expect(fn () => $this->client->send(sampleMessage()))->toThrow($exception);
+})->with([
+    'unauthorized' => [401, ClientException::class],
+    'server failure' => [503, ServerException::class],
+]);
 
 it('throws when the API refuses the send with HTTP 200', function () {
     // Verbatim shape returned by SMTP2GO for an unverified sender domain.
